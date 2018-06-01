@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard1.4;net4.5</TargetFrameworks>
-    <Version>0.1.1</Version>
+    <Version>0.1.2</Version>
     <PackageId>ReliableDbConnectionWrapper</PackageId>
     <Title>ReliableDbConnectionWrapper</Title>
     <Description>.NET DbConnection wrapper for retries, making a standard DbConnection more reliable to transient failures.</Description>
@@ -12,11 +12,11 @@
     <PackageTags>DbConnection Ado.NET Ado Retry Retries Transient Failure</PackageTags>
     <IncludeSource>false</IncludeSource>
     <PackageReleaseNotes>
-      Improved dependencies for the net4.5 framework.
+      Changed dependency to Polly 5.9.0 in order to keep dependencies in the net4.5 lighter.
     </PackageReleaseNotes>
   </PropertyGroup>
   <ItemGroup>
-    <PackageReference Include="Polly" Version="6.0.1" />
+    <PackageReference Include="Polly" Version="5.9.0" />
   </ItemGroup>
   <ItemGroup Condition=" '$(TargetFramework)' == 'netstandard1.4' ">
     <PackageReference Include="System.Data.Common" Version="4.3.0" />
