@@ -11,15 +11,15 @@ namespace ReliableDbWrapper
 {
     public class ReliableDbTransactionWrapper : DbTransaction
     {
-        private ReliableDbConnectionWrapper _underlyingConnection;
-        private DbTransaction _underlyingTransaction;
+        public ReliableDbConnectionWrapper InnerConnection { get; set; }
+        public DbTransaction InnerTransaction { get; set; }
         private readonly Policy _retryPolicy;
 
         public ReliableDbTransactionWrapper(DbTransaction transaction, ReliableDbConnectionWrapper connection,
                 Policy retryPolicy)
         {
-            _underlyingTransaction = transaction;
-            _underlyingConnection = connection;
+            InnerTransaction = transaction;
+            InnerConnection = connection;
             _retryPolicy = retryPolicy;
             TransactionId = Guid.NewGuid();
         }
@@ -28,29 +28,29 @@ namespace ReliableDbWrapper
 
         public override IsolationLevel IsolationLevel
         {
-            get { return _underlyingTransaction.IsolationLevel; }
+            get { return InnerTransaction.IsolationLevel; }
         }
 
         protected override DbConnection DbConnection
         {
-            get { return _underlyingConnection; }
+            get { return InnerConnection; }
         }
 
         public override void Commit()
         {
-            _retryPolicy.Execute(() => _underlyingTransaction.Commit());
+            _retryPolicy.Execute(() => InnerTransaction.Commit());
         }
 
         public override void Rollback()
         {
-            _retryPolicy.Execute(() => _underlyingTransaction.Rollback());
+            _retryPolicy.Execute(() => InnerTransaction.Rollback());
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                _underlyingTransaction.Dispose();
+                InnerTransaction.Dispose();
             }
 
             base.Dispose(disposing);

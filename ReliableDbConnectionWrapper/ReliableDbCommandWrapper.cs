@@ -10,6 +10,8 @@ namespace ReliableDbWrapper
         private DbCommand _underlyingDbCommand;
         private readonly Policy _retryPolicy;
 
+        public ReliableDbConnectionWrapper InnerConnection { get; set; } 
+
         public ReliableDbCommandWrapper(DbCommand underlyingCommand, Policy retryPolicy)
         {
             _underlyingDbCommand = underlyingCommand;
@@ -48,16 +50,41 @@ namespace ReliableDbWrapper
 
         protected override DbConnection DbConnection
         {
-            get => _underlyingDbCommand.Connection;
-            set => _underlyingDbCommand.Connection = value;
+            get
+            {
+                return InnerConnection;
+            }
+
+            set
+            {
+                InnerConnection = value as ReliableDbConnectionWrapper;
+                if (InnerConnection != null)
+                {
+                    _underlyingDbCommand.Connection = InnerConnection.InnerConnection;
+                }
+                else
+                { 
+                    InnerConnection = new ReliableDbConnectionWrapper(value, _retryPolicy);
+                    _underlyingDbCommand.Connection = InnerConnection.InnerConnection; 
+                }
+            }
         }
 
         protected override DbParameterCollection DbParameterCollection => _underlyingDbCommand.Parameters;
 
         protected override DbTransaction DbTransaction
         {
-            get => _underlyingDbCommand.Transaction;
-            set => _underlyingDbCommand.Transaction = value;
+            get
+            {
+                return _underlyingDbCommand.Transaction == null ? null 
+                    : new ReliableDbTransactionWrapper(_underlyingDbCommand.Transaction, InnerConnection, _retryPolicy);
+            }
+
+            set
+            {
+                var transaction = value as ReliableDbTransactionWrapper;
+                _underlyingDbCommand.Transaction = (transaction != null) ? transaction.InnerTransaction : value;
+            }
         }
 
         public override void Cancel()

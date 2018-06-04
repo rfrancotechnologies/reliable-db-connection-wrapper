@@ -8,76 +8,76 @@ namespace ReliableDbWrapper
     public class ReliableDbConnectionWrapper : DbConnection
     {
         private readonly Policy _retryPolicy;
-        private DbConnection _underlyingConnection;
+        public DbConnection InnerConnection { get; set; }
 
         public ReliableDbConnectionWrapper(DbConnection underlyingConnection, Policy retryPolicy)
         {
             _retryPolicy = retryPolicy;
-            _underlyingConnection = underlyingConnection;
+            InnerConnection = underlyingConnection;
         }
 
         public override string ConnectionString
         {
             get
             {
-                return _underlyingConnection.ConnectionString;
+                return InnerConnection.ConnectionString;
             }
 
             set
             {
-                _underlyingConnection.ConnectionString = value;
+                InnerConnection.ConnectionString = value;
             }
         }
 
-        public override string Database => _underlyingConnection.Database;
+        public override string Database => InnerConnection.Database;
 
-        public override string DataSource => _underlyingConnection.DataSource;
+        public override string DataSource => InnerConnection.DataSource;
 
-        public override string ServerVersion => _underlyingConnection.ServerVersion;
+        public override string ServerVersion => InnerConnection.ServerVersion;
 
-        public override ConnectionState State => _underlyingConnection.State;
+        public override ConnectionState State => InnerConnection.State;
 
         public override void ChangeDatabase(string databaseName)
         {
-            _underlyingConnection.ChangeDatabase(databaseName);
+            InnerConnection.ChangeDatabase(databaseName);
         }
 
         public override void Close()
         {
-            _underlyingConnection.Close();
+            InnerConnection.Close();
         }
 
         public override void Open()
         {
             _retryPolicy.Execute(() =>
             {
-                if (_underlyingConnection.State != ConnectionState.Open)
+                if (InnerConnection.State != ConnectionState.Open)
                 {
-                    _underlyingConnection.Open();
+                    InnerConnection.Open();
                 }
             });
         }
 
         protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
         {
-            return _underlyingConnection.BeginTransaction(isolationLevel);
+            return new ReliableDbTransactionWrapper(InnerConnection.BeginTransaction(isolationLevel), this, _retryPolicy);
         }
 
         protected override DbCommand CreateDbCommand()
         {
-            return new ReliableDbCommandWrapper(_underlyingConnection.CreateCommand(), _retryPolicy);
+            return new ReliableDbCommandWrapper(InnerConnection.CreateCommand(), _retryPolicy);
         }
 
         protected override void Dispose(bool disposing)
         {
             if (disposing)
             {
-                if (_underlyingConnection.State == ConnectionState.Open)
+                if (InnerConnection.State == ConnectionState.Open)
                 {
-                    _underlyingConnection.Close();
+                    InnerConnection.Close();
                 }
 
-                _underlyingConnection.Dispose();
+                InnerConnection.Dispose();
             }
 
             GC.SuppressFinalize(this);
