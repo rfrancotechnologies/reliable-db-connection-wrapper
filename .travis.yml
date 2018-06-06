@@ -5,3 +5,6 @@ script:
  - dotnet restore
  - cd ReliableDbConnectionWrapper
  - dotnet build -f netstandard1.4
+ - cd ../ReliableDbConnectionWrapper.Tests
+ - dotnet build
+ - dotnet test
