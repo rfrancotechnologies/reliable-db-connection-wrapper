@@ -3,6 +3,7 @@
     <TargetFramework>netcoreapp1.1</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <PackageReference Include="AutoFixture" Version="4.4.0" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.0.0" />
     <PackageReference Include="moq" Version="4.7.145" />
     <PackageReference Include="xunit" Version="2.2.0" />

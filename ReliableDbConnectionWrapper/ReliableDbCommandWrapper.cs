@@ -8,11 +8,11 @@ namespace ReliableDbWrapper
     public class ReliableDbCommandWrapper : DbCommand
     {
         private DbCommand _underlyingDbCommand;
-        private readonly Policy _retryPolicy;
+        private readonly ISyncPolicy _retryPolicy;
 
         public ReliableDbConnectionWrapper InnerConnection { get; set; } 
 
-        public ReliableDbCommandWrapper(DbCommand underlyingCommand, Policy retryPolicy)
+        public ReliableDbCommandWrapper(DbCommand underlyingCommand, ISyncPolicy retryPolicy)
         {
             _underlyingDbCommand = underlyingCommand;
             _retryPolicy = retryPolicy;

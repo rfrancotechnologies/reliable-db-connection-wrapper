@@ -13,10 +13,10 @@ namespace ReliableDbWrapper
     {
         public ReliableDbConnectionWrapper InnerConnection { get; set; }
         public DbTransaction InnerTransaction { get; set; }
-        private readonly Policy _retryPolicy;
+        private readonly ISyncPolicy _retryPolicy;
 
         public ReliableDbTransactionWrapper(DbTransaction transaction, ReliableDbConnectionWrapper connection,
-                Policy retryPolicy)
+                ISyncPolicy retryPolicy)
         {
             InnerTransaction = transaction;
             InnerConnection = connection;

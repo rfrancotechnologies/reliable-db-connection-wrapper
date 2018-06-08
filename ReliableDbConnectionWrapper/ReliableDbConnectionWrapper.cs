@@ -7,10 +7,10 @@ namespace ReliableDbWrapper
 {
     public class ReliableDbConnectionWrapper : DbConnection
     {
-        private readonly Policy _retryPolicy;
+        private readonly ISyncPolicy _retryPolicy;
         public DbConnection InnerConnection { get; set; }
 
-        public ReliableDbConnectionWrapper(DbConnection underlyingConnection, Policy retryPolicy)
+        public ReliableDbConnectionWrapper(DbConnection underlyingConnection, ISyncPolicy retryPolicy)
         {
             _retryPolicy = retryPolicy;
             InnerConnection = underlyingConnection;

@@ -10,29 +10,36 @@ using Xunit;
 using ReliableDbWrapper;
 using Polly;
 using System.Data;
+using AutoFixture;
 
 namespace ReliableDbWrapper.Tests
 {
     public class ReliableDbConnectionWrapperTests
     {
+        private Fixture fixture;
+        public ReliableDbConnectionWrapperTests() 
+        {
+            fixture = new Fixture();
+        }
+
         [Fact]
         public void ShouldReadConnectionStringFromInnerConnection() 
         {
-            string testConnectionString = "TestConnectionString";
+            string testConnectionString = fixture.Create<string>();
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
             dbConnectionMock.Setup(x => x.ConnectionString).Returns(testConnectionString);
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
             Assert.Equal(testConnectionString, connectionWrapper.ConnectionString);
         }
 
         [Fact]
         public void ShouldSetConnectionStringToInnerConnection() 
         {
-            string testConnectionString = "TestConnectionString";
+            string testConnectionString = fixture.Create<string>();
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
 
             connectionWrapper.ConnectionString = testConnectionString;
             dbConnectionMock.VerifySet(x => x.ConnectionString = testConnectionString);
@@ -41,54 +48,54 @@ namespace ReliableDbWrapper.Tests
         [Fact]
         public void ShouldReadDatabaseNameFromInnerConnection() 
         {
-            string testDatabaseName = "TestDatabaseName";
+            string testDatabaseName = fixture.Create<string>();
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
             dbConnectionMock.Setup(x => x.Database).Returns(testDatabaseName);
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
             Assert.Equal(testDatabaseName, connectionWrapper.Database);
         }
 
         [Fact]
         public void ShouldReadDataSourceFromInnerConnection() 
         {
-            string testDataSource = "TestDataSource";
+            string testDataSource = fixture.Create<string>();
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
             dbConnectionMock.Setup(x => x.DataSource).Returns(testDataSource);
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
             Assert.Equal(testDataSource, connectionWrapper.DataSource);
         }
 
         [Fact]
         public void ShouldReadServerVersionFromInnerConnection() 
         {
-            string testServerVersion = "10.00.15";
+            string testServerVersion = fixture.Create<string>();
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
             dbConnectionMock.Setup(x => x.ServerVersion).Returns(testServerVersion);
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
             Assert.Equal(testServerVersion, connectionWrapper.ServerVersion);
         }
 
         [Fact]
         public void ShouldReadConnectionStateFromInnerConnection() 
         {
-            ConnectionState testConnectionState = ConnectionState.Open;
+            ConnectionState testConnectionState = fixture.Create<ConnectionState>();
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
             dbConnectionMock.Setup(x => x.State).Returns(testConnectionState);
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
             Assert.Equal(testConnectionState, connectionWrapper.State);
         }
  
         [Fact]
         public void ShouldSetNewDatabaseToInnerConnection() 
         {
-            string testDatabasename = "TestDatabaseName";
+            string testDatabasename = fixture.Create<string>();
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
 
             connectionWrapper.ChangeDatabase(testDatabasename);
             dbConnectionMock.Verify(x => x.ChangeDatabase(testDatabasename));
@@ -98,22 +105,25 @@ namespace ReliableDbWrapper.Tests
         public void ShouldCloseInnerConnection() 
         {
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
 
             connectionWrapper.Close();
             dbConnectionMock.Verify(x => x.Close());
         }
 
         [Fact]
-        public void ShouldOpenInnerConnectionWhenInStatusOtherThanOpen() 
+        public void ShouldOpenInnerConnectionWithRetriesWhenInStatusOtherThanOpen() 
         {
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
-            dbConnectionMock.Setup(x => x.State).Returns(ConnectionState.Closed);
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
 
+            dbConnectionMock.Setup(x => x.State).Returns(ConnectionState.Closed);
+            retryPolicyMock.Setup(x => x.Execute(It.IsAny<Action>())).Callback<Action>(a => a.Invoke());
+            
             connectionWrapper.Open();
+            retryPolicyMock.Verify(x => x.Execute(It.IsAny<Action>()));
             dbConnectionMock.Verify(x => x.Open());
         }
 
@@ -121,8 +131,8 @@ namespace ReliableDbWrapper.Tests
         public void ShouldNotOpenInnerConnectionWhenAlreadyOpen() 
         {
             Mock<DbConnection> dbConnectionMock = new Mock<DbConnection>();
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock.Object, retryPolicyMock.Object);
             dbConnectionMock.Setup(x => x.State).Returns(ConnectionState.Open);
 
             connectionWrapper.Open();
@@ -130,59 +140,42 @@ namespace ReliableDbWrapper.Tests
         }
 
         [Fact]
-        public void ShouldBeginTransactionInInnerConnectionAnReturnTransactionWrapper() 
+        public void ShouldBeginTransactionInInnerConnectionAnReturnWrapper() 
         {
             var testIsolationLevel = IsolationLevel.ReadCommitted;
             var dbConnectionMock = new MockDbConnection();
-            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock, 
-                Policy.Handle<Exception>().WaitAndRetry(3, (retry) => TimeSpan.FromSeconds(1)));
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock, retryPolicyMock.Object);
 
             var obtainedTransaction = connectionWrapper.BeginTransaction(testIsolationLevel);
-            Assert.True(((MockDbConnection) dbConnectionMock).TransactionBegun);
-            Assert.Equal(testIsolationLevel, ((MockDbConnection) dbConnectionMock).UsedTransactionIsolationLevel);
-        }
-    }
-
-    public class MockDbConnection : DbConnection
-    {
-        public  bool TransactionBegun { get; set; }
-        public IsolationLevel UsedTransactionIsolationLevel { get; set; }
-
-        public override string ConnectionString { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
-
-        public override string Database => throw new NotImplementedException();
-
-        public override string DataSource => throw new NotImplementedException();
-
-        public override string ServerVersion => throw new NotImplementedException();
-
-        public override ConnectionState State => throw new NotImplementedException();
-
-        public override void ChangeDatabase(string databaseName)
-        {
-            throw new NotImplementedException();
+            Assert.Equal(1, ((MockDbConnection) connectionWrapper.InnerConnection).BeginDbTransactionCount);
+            Assert.Equal(testIsolationLevel, ((MockDbConnection) dbConnectionMock).LastUsedTransactionIsolationLevel);
+            Assert.True(obtainedTransaction is ReliableDbTransactionWrapper);
+            Assert.True(((ReliableDbTransactionWrapper) obtainedTransaction).InnerTransaction is MockDbTransaction);
         }
 
-        public override void Close()
+        [Fact]
+        public void ShouldCreateCommandsInInnerConnectionAnReturnWrapper() 
         {
-            throw new NotImplementedException();
+            var dbConnectionMock = new MockDbConnection();
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock, retryPolicyMock.Object);
+
+            var obtainedCommand = connectionWrapper.CreateCommand();
+            Assert.Equal(1, ((MockDbConnection) connectionWrapper.InnerConnection).CreateCommandCount);
+            Assert.True(obtainedCommand is ReliableDbCommandWrapper);
         }
 
-        public override void Open()
+        [Fact]
+        public void ShouldCloseAndDisposeInnerConnection() 
         {
-            throw new NotImplementedException();
-        }
+            var dbConnectionMock = new MockDbConnection();
+            Mock<ISyncPolicy> retryPolicyMock = new Mock<ISyncPolicy>();
+            var connectionWrapper = new ReliableDbConnectionWrapper(dbConnectionMock, retryPolicyMock.Object);
 
-        protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel)
-        {
-            TransactionBegun = true;
-            UsedTransactionIsolationLevel = isolationLevel;
-            return null;
-        }
-
-        protected override DbCommand CreateDbCommand()
-        {
-            throw new NotImplementedException();
+            connectionWrapper.Dispose();
+            Assert.Equal(1, ((MockDbConnection) connectionWrapper.InnerConnection).CloseCount);
+            Assert.Equal(1, ((MockDbConnection) connectionWrapper.InnerConnection).DisposeCount);
         }
     }
 }
